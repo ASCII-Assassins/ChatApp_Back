@@ -2,8 +2,9 @@ import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ChatModule } from './chat/chat.module';
 import { UsersModule } from './users/users.module';
-import { GroupsModule } from './groups/groups.module';
+import { GroupsModule } from './channel/groups.module';
 import { NotificationsModule } from './notifications/notifications.module';
+
 
 @Module({
   imports: [
