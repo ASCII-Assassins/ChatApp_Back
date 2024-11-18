@@ -1,27 +1,16 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { Notification } from './schemas/notifications.schema';
+import { Notification } from '../schemas/notifications.schema';
 
 @Injectable()
 export class NotificationsService {
-  constructor(@InjectModel('Notification') private readonly notificationModel: Model<Notification>) {}
+  constructor(
+    @InjectModel(Notification.name) private readonly notificationModel: Model<Notification>, // Injection du modèle Notification
+  ) {}
 
-  async findAll() {
+  // Exemple de méthode dans NotificationsService
+  async findAll(): Promise<Notification[]> {
     return this.notificationModel.find().exec();
   }
-
-  async findOne(id: string) {
-    return this.notificationModel.findById(id).exec();
-  }
-
-  async create(notification: Notification) {
-    const createdNotification = new this.notificationModel(notification);
-    return createdNotification.save();
-  }
-
-  async delete(id: string) {
-    return this.notificationModel.findByIdAndDelete(id).exec();
-  }
 }
-
