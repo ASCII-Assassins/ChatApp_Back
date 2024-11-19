@@ -11,6 +11,6 @@ import { User, UserSchema } from '../schemas/user.schema';
   ],
   providers: [UsersService],
   controllers: [UsersController],
-  exports: [UsersService], // Exportation du service si nécessaire pour d'autres modules
+  exports: [UsersService, MongooseModule], // Exportation du service si nécessaire pour d'autres modules
 })
 export class UsersModule {}
