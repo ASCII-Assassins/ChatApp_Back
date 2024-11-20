@@ -9,9 +9,7 @@ import {
     MessageBody,
   } from '@nestjs/websockets';
   import { Server, Socket } from 'socket.io';
-  import { UseGuards } from '@nestjs/common';
   import { ChatService } from './chat.service';
-  import { WsJwtGuard } from './ws-jwt.guard';
   import { User, UserStatus } from '../schemas/user.schema';
   import { Message, MessageType, MessageStatus } from '../schemas/message.schema';
   import { UserService } from '../user/user.service';
@@ -33,7 +31,7 @@ import {
     },
     transports: ['websocket']
   })
-  @UseGuards(WsJwtGuard)
+ 
   export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
     @WebSocketServer()
     server: Server;
