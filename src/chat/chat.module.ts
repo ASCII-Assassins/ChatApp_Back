@@ -3,7 +3,7 @@ import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ChatGateway } from './chat.gateway';
 import { ChatService } from './chat.service';
-import { UserModule } from '../user/user.module';
+import { UserModule } from '../users/user.module';
 import { Message, MessageSchema } from '../schemas/message.schema';
 import { Group, GroupSchema } from '../schemas/group.schema';
 import { Channel, ChannelSchema } from '../schemas/channel.schema';

@@ -12,7 +12,7 @@ import {
   import { ChatService } from './chat.service';
   import { User, UserStatus } from '../schemas/user.schema';
   import { Message, MessageType, MessageStatus } from '../schemas/message.schema';
-  import { UserService } from '../user/user.service';
+  import { UserService } from '../users/user.service';
   
   interface SendMessageDto {
     receiverId?: string;
