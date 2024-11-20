@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ChatModule } from './chat/chat.module';
 import { UsersModule } from './users/users.module';
-import { GroupsModule } from './channel/groups.module';
+import { ChannelModule } from './channel/channel.module';
 import { NotificationsModule } from './notifications/notifications.module';
 
 
@@ -11,7 +11,7 @@ import { NotificationsModule } from './notifications/notifications.module';
     MongooseModule.forRoot('mongodb://localhost:27017/chat-service'),
     ChatModule,
     UsersModule,
-    GroupsModule,
+    ChannelModule,
     NotificationsModule,
   ],
 })
