@@ -1,16 +1,17 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
 
+// channel.schema.ts
 @Schema()
 export class Channel extends Document {
   @Prop({ required: true })
-  name: string;  // Nom du canal
+  name: string;
 
-  @Prop({ type: [String], required: true })
-  members: string[];  // Liste des ID des utilisateurs
+  @Prop()
+  description: string;
 
-  @Prop({ default: Date.now })
-  createdAt: Date;  // Date de création du canal
+  @Prop({ required: true, default: Date.now })
+  createdAt: Date;
 }
 
 export const ChannelSchema = SchemaFactory.createForClass(Channel);

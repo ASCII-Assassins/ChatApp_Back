@@ -1,25 +1,49 @@
-// src/schemas/message.schema.ts
-import * as mongoose from 'mongoose';
+// message.schema.ts
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Types } from 'mongoose';
 
-export type MessageDocument = Message & Document;
+export enum MessageStatus {
+  SENT = 'sent',
+  DELIVERED = 'delivered',
+  READ = 'read',
+}
 
-@Schema({ timestamps: true })
-export class Message {
+export enum MessageType {
+  PRIVATE = 'private',
+  GROUP = 'group',
+  CHANNEL = 'channel',
+}
+
+@Schema()
+export class Message extends Document {
   @Prop({ type: Types.ObjectId, ref: 'User', required: true })
   sender: Types.ObjectId;
 
-  @Prop({ type: Types.ObjectId, ref: 'User', required: true })
-  recipient: Types.ObjectId;
+  @Prop({ type: Types.ObjectId, ref: 'User' })
+  receiver?: Types.ObjectId;
+
+  @Prop({ type: Types.ObjectId, ref: 'Group' })
+  group?: Types.ObjectId;
+
+  @Prop({ type: Types.ObjectId, ref: 'Channel' })
+  channel?: Types.ObjectId;
 
   @Prop({ required: true })
   content: string;
 
-  @Prop({ default: 'sent' }) // Statut du message: envoyé, lu, livré
-  status: string;
+  @Prop({ required: true, enum: MessageType })
+  type: MessageType;
 
-  @Prop({ default: Date.now })
+  @Prop({ required: true, enum: MessageStatus, default: MessageStatus.SENT })
+  status: MessageStatus;
+
+  @Prop({ default: false })
+  isEdited: boolean;
+
+  @Prop()
+  editedAt?: Date;
+
+  @Prop({ required: true, default: Date.now })
   createdAt: Date;
 }
 

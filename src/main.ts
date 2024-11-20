@@ -1,8 +1,38 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
+import { IoAdapter } from '@nestjs/platform-socket.io';
+
+class CustomIoAdapter extends IoAdapter {
+  createIOServer(port: number, options?: any): any {
+    const server = super.createIOServer(port, {
+      ...options,
+      cors: {
+        origin: '*',
+        methods: ['GET', 'POST'],
+        allowedHeaders: ['Authorization', 'Content-Type'],
+        credentials: true,
+      },
+      allowEIO3: true,
+      transport: ['websocket'],
+    });
+
+    return server;
+  }
+}
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  await app.listen(process.env.PORT ?? 3000);
+  
+  app.enableCors({
+    origin: '*',
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+    credentials: true,
+  });
+
+  // Utiliser l'adaptateur personnalisé
+  app.useWebSocketAdapter(new CustomIoAdapter(app));
+
+  await app.listen(3000);
+  console.log('Application is running on:', await app.getUrl());
 }
 bootstrap();
