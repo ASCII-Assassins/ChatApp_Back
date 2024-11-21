@@ -8,7 +8,7 @@ import { NotificationsModule } from './notifications/notifications.module';
 
 @Module({
   imports: [
-    MongooseModule.forRoot('mongodb://localhost:27017/chat-service'),
+    MongooseModule.forRoot('mongodb+srv://bouhamidisal:i5qgTbKB3lh2pqBH@cluster-chatapp.dlvhr.mongodb.net/Chat-Application'),
     ChatModule,
     UsersModule,
     GroupsModule,

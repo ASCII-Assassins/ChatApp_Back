@@ -27,6 +27,14 @@ export class Group {
 
   @Prop({ default: Date.now })
   createdAt: Date;
+
+  @Prop({
+    type: [{ 
+      userId: { type: Types.ObjectId, ref: 'User' }, 
+      status: { type: String, enum: ['pending', 'accepted', 'rejected'], default: 'pending' } 
+    }]
+  })
+  invitations: { userId: Types.ObjectId; status: string }[];
 }
 
 export const GroupSchema = SchemaFactory.createForClass(Group);
