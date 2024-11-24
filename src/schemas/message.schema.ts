@@ -1,50 +1,32 @@
-// message.schema.ts
+// src/schemas/message.schema.ts
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Types } from 'mongoose';
+import { User } from './user.schema';
 
-export enum MessageStatus {
-  SENT = 'sent',
-  DELIVERED = 'delivered',
-  READ = 'read',
-}
+export type MessageDocument = Message & Document;
 
-export enum MessageType {
-  PRIVATE = 'private',
-  GROUP = 'group',
-  CHANNEL = 'channel',
-}
-
-@Schema()
-export class Message extends Document {
+@Schema({ timestamps: true })
+export class Message {
   @Prop({ type: Types.ObjectId, ref: 'User', required: true })
-  sender: Types.ObjectId;
+  sender: User;
 
   @Prop({ type: Types.ObjectId, ref: 'User' })
-  receiver?: Types.ObjectId;
+  receiver?: User;
 
   @Prop({ type: Types.ObjectId, ref: 'Group' })
   group?: Types.ObjectId;
 
-  @Prop({ type: Types.ObjectId, ref: 'Channel' })
-  channel?: Types.ObjectId;
-
   @Prop({ required: true })
   content: string;
 
-  @Prop({ required: true, enum: MessageType })
-  type: MessageType;
-
-  @Prop({ required: true, enum: MessageStatus, default: MessageStatus.SENT })
-  status: MessageStatus;
-
   @Prop({ default: false })
-  isEdited: boolean;
+  isRead: boolean;
 
   @Prop()
-  editedAt?: Date;
+  readAt?: Date;
 
-  @Prop({ required: true, default: Date.now })
-  createdAt: Date;
+  @Prop({ default: 'private', enum: ['private', 'group', 'general'] })
+  type: string;
 }
 
 export const MessageSchema = SchemaFactory.createForClass(Message);

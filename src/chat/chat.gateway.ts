@@ -1,161 +1,103 @@
+// chat.gateway.ts
 import {
     WebSocketGateway,
     WebSocketServer,
     SubscribeMessage,
     OnGatewayConnection,
     OnGatewayDisconnect,
-    OnGatewayInit,
     ConnectedSocket,
     MessageBody,
   } from '@nestjs/websockets';
   import { Server, Socket } from 'socket.io';
   import { ChatService } from './chat.service';
-  import { User, UserStatus } from '../schemas/user.schema';
-  import { Message, MessageType, MessageStatus } from '../schemas/message.schema';
-  import { UserService } from '../users/user.service';
   
-  interface SendMessageDto {
-    receiverId?: string;
-    groupId?: string;
-    channelId?: string;
-    content: string;
-  }
-  
-  @WebSocketGateway(3001, {
-    namespace: '/chat',
+  @WebSocketGateway({
     cors: {
-      origin: '*', 
-      methods: ['GET', 'POST'],
-      credentials: true,
-      allowedHeaders: ['Authorization', 'Content-Type'],
+      origin: '*',
     },
-    transports: ['websocket']
   })
- 
-  export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
+  export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @WebSocketServer()
     server: Server;
   
-    private userSocketMap: Map<string, string> = new Map();
-    private socketUserMap: Map<string, string> = new Map();
-  
-    constructor(
-      private readonly chatService: ChatService,
-      private readonly userService: UserService,
-    ) {}
-  
-    afterInit(server: Server) {
-      console.log('WebSocket Gateway initialized');
-    }
+    constructor(private chatService: ChatService) {}
   
     async handleConnection(client: Socket) {
-      try {
-        const userId = client.handshake.query.userId as string;
-        if (!userId) {
-          client.disconnect();
-          return;
-        }
-  
-        // Validate user exists
-        const user = await this.userService.findById(userId);
-        if (!user){
-          client.disconnect();
-          return;
-        }
-  
-        // Set user data and update status
-        client.data.user = user;
-        this.userSocketMap.set(userId, client.id);
-        this.socketUserMap.set(client.id, userId);
-  
-        await this.userService.updateUserStatus(userId, UserStatus.ONLINE, client.id);
-  
-        // Broadcast user online status
-        this.server.emit('userStatusChange', {
-          userId,
-          status: UserStatus.ONLINE,
-          isOnline: true
-        });
-  
-      } catch (e) {
-        console.error('Connection error:', e);
-        client.disconnect();
+      const userId = client.handshake.query.userId as string;
+      if (userId) {
+        this.chatService.userConnected(userId, client.id);
+        const connectedUsers = await this.chatService.getConnectedUsers();
+        this.server.emit('users:connected', connectedUsers);
       }
     }
   
     async handleDisconnect(client: Socket) {
-      const userId = this.socketUserMap.get(client.id);
+      const userId = client.handshake.query.userId as string;
       if (userId) {
-        await this.userService.updateUserStatus(userId, UserStatus.OFFLINE, null);
-        
-        // Broadcast user offline status
-        this.server.emit('userStatusChange', {
-          userId,
-          status: UserStatus.OFFLINE,
-          isOnline: false,
-        });
-  
-        this.userSocketMap.delete(userId);
-        this.socketUserMap.delete(client.id);
+        this.chatService.userDisconnected(userId);
+        const connectedUsers = await this.chatService.getConnectedUsers();
+        this.server.emit('users:connected', connectedUsers);
       }
     }
   
-    @SubscribeMessage('sendMessage')
-    async handleSendMessage(
+    @SubscribeMessage('message:private')
+    async handlePrivateMessage(
       @ConnectedSocket() client: Socket,
-      @MessageBody() data: SendMessageDto,
+      @MessageBody() data: { senderId: string; receiverId: string; content: string },
     ) {
-      const sender = client.data.user as User;
+      const message = await this.chatService.saveMessage(
+        data.senderId,
+        data.content,
+        'private',
+        data.receiverId,
+      );
   
-      try {
-        let message: Message;
-        let type: MessageType;
-        let destinationId: string;
-  
-        if (data.receiverId) {
-          type = MessageType.PRIVATE;
-          destinationId = data.receiverId;
-        } else if (data.groupId) {
-          type = MessageType.GROUP;
-          destinationId = data.groupId;
-        } else if (data.channelId) {
-          type = MessageType.CHANNEL;
-          destinationId = data.channelId;
-        } else {
-          throw new Error('Invalid message destination');
-        }
-  
-        message = await this.chatService.sendMessage(
-          sender._id.toString(),
-          destinationId,
-          data.content,
-          type
-        );
-  
-        // Emit message based on type
-        switch (type) {
-          case MessageType.PRIVATE:
-            await this.emitToUser(destinationId, 'newMessage', message);
-            break;
-          case MessageType.GROUP:
-            this.server.to(`group-${destinationId}`).emit('newMessage', message);
-            break;
-          case MessageType.CHANNEL:
-            this.server.to(`channel-${destinationId}`).emit('newMessage', message);
-            break;
-        }
-  
-        return message;
-      } catch (error) {
-        return { error: error.message };
+      const receiverSocketId = this.chatService.getSocketId(data.receiverId);
+      if (receiverSocketId) {
+        this.server.to(receiverSocketId).emit('message:private', message);
       }
+      
+      client.emit('message:private', message);
     }
   
-    // Helper method to emit events to a specific user
-    private async emitToUser(userId: string, event: string, data: any) {
-      const socketId = this.userSocketMap.get(userId);
-      if (socketId) {
-        this.server.to(socketId).emit(event, data);
-      }
+    @SubscribeMessage('message:group')
+    async handleGroupMessage(
+      @MessageBody()
+      data: { senderId: string; groupId: string; content: string },
+    ) {
+      const message = await this.chatService.saveMessage(
+        data.senderId,
+        data.content,
+        'group',
+        undefined,
+        data.groupId,
+      );
+  
+      this.server.emit('message:group', {
+        groupId: data.groupId,
+        message,
+      });
+    }
+  
+    @SubscribeMessage('message:general')
+    async handleGeneralMessage(
+      @MessageBody()
+      data: { senderId: string; content: string },
+    ) {
+      const message = await this.chatService.saveMessage(
+        data.senderId,
+        data.content,
+        'general',
+      );
+  
+      this.server.emit('message:general', message);
+    }
+  
+    @SubscribeMessage('message:read')
+    async handleMessageRead(
+      @MessageBody() data: { messageId: string },
+    ) {
+      const message = await this.chatService.markMessageAsRead(data.messageId);
+      this.server.emit('message:updated', message);
     }
   }

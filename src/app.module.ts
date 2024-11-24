@@ -3,10 +3,9 @@ import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ChatModule } from './chat/chat.module';
-import { UserModule } from './users/user.module';
+import { UsersModule } from './users/users.module';
 import { GroupsModule } from './channel/groups.module';
 import { NotificationsModule } from './notifications/notifications.module';
-import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
@@ -23,8 +22,8 @@ import { AuthModule } from './auth/auth.module';
       inject: [ConfigService],
     }),
     // Modules de l'application
-    AuthModule, // AuthModule devrait être avant les autres modules qui peuvent en dépendre
-    UserModule,
+    // AuthModule devrait être avant les autres modules qui peuvent en dépendre
+    UsersModule,
     ChatModule,
     GroupsModule,
     NotificationsModule,

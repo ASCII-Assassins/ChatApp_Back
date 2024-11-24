@@ -1,6 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { IoAdapter } from '@nestjs/platform-socket.io';
+import { ValidationPipe } from '@nestjs/common';
 
 class CustomIoAdapter extends IoAdapter {
   createIOServer(port: number, options?: any): any {
@@ -28,6 +29,9 @@ async function bootstrap() {
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     credentials: true,
   });
+
+  app.useGlobalPipes(new ValidationPipe());
+  app.enableCors(); 
 
   // Utiliser l'adaptateur personnalisé
   app.useWebSocketAdapter(new CustomIoAdapter(app));
