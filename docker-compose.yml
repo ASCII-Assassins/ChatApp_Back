@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  chat-service:
+    build: .
+    ports:
+      - '4003:3000'
+    volumes:
+      - .:/app
+      - /app/node_modules
+    environment:
+      - MONGODB_URI=${MONGODB_URI}
+      - CORS_ORIGIN=${CORS_ORIGIN}
+      - RABBITMQ_URI=${RABBITMQ_URI}
