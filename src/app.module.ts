@@ -3,6 +3,8 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { ChatModule } from './chat/chat.module';
 import { UsersModule } from './users/users.module';
 import { ChannelModule } from './channel/channel.module';
+
+import { GroupsModule } from './Group/groups.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { EventsModule } from './events/events.module';
 
