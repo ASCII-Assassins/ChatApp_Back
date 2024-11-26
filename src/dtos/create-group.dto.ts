@@ -1,12 +1,29 @@
-// src/dto/create-group.dto.ts
-import { IsNotEmpty, IsArray, IsString } from 'class-validator';
+import { IsNotEmpty, IsString, IsOptional, IsMongoId, IsBoolean, IsArray } from 'class-validator';
+import { Types } from 'mongoose';
+
 
 export class CreateGroupDto {
-  @IsNotEmpty()
   @IsString()
+  @IsNotEmpty({message: "the name shouldn't be empty"})
   name: string;
 
+  @IsString()
+  @IsOptional()
+  description?: string;
+
+  @IsOptional()
   @IsArray()
-  @IsString({ each: true })
-  members: string[]; // Liste des utilisateurs dans le groupe
+  @IsMongoId({ each: true })
+  members?: Types.ObjectId[];
+
+  @IsMongoId()
+  owner: string;
+
+  @IsBoolean()
+  @IsOptional()
+  isPrivate?: boolean;
+
+  @IsString()
+  @IsOptional()
+  image?: string;
 }
