@@ -11,6 +11,12 @@ export class User {
   username: string;
 
   @Prop({ required: true })
+  firstName: string;
+
+  @Prop({ required: true })
+  lastName: string;
+
+  @Prop({ required: true })
   email: string;
 
   @Prop({ default: 'offline' }) // Statut de l'utilisateur (en ligne, hors ligne, masqué)

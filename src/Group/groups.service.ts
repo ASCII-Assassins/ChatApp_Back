@@ -178,11 +178,13 @@ export class GroupsService {
     }
 
     async getUserGroups(request: Request):Promise <Group[]>{
-        const userId = request.headers['x-user-id'] as string;
-        if (!userId) {
-          throw new ForbiddenException('User ID is missing in headers');
-        }
+        // const userId = request.headers['x-user-id'] as string;
+        // if (!userId) {
+        //   throw new ForbiddenException('User ID is missing in headers');
+        // }
+        const userId = "673d1da054f2cb0494998e50"
         const groups = await this.groupModel.find({ members: userId }).exec();
+        console.log(groups)
         if (!groups || groups.length === 0) {
             throw new NotFoundException(`User is not a member of any groups.`);
         }
