@@ -1,30 +1,15 @@
-// src/chat/chat.controller.ts
-import { Controller, Post, Body, Param, Get, ValidationPipe } from '@nestjs/common';
-import { ChatService } from './chat.service';
-import { CreateMessageDto } from '../dtos/create-message.dto';
-import { CreateGroupDto } from '../dtos/create-group.dto';
+import { Controller, Get, Param } from '@nestjs/common';
+import {ChatService} from './chat.service';
 
 @Controller('chat')
 export class ChatController {
-  constructor(private readonly chatService: ChatService) {}
+  constructor(private readonly messagesService: ChatService) {}
 
-  @Post('message')
-  async sendMessage(@Body(ValidationPipe) createMessageDto: CreateMessageDto) {
-    return this.chatService.createMessage(createMessageDto.senderId, createMessageDto);
-  }
-
-  @Get(':user1Id/:user2Id')
-  async getMessagesBetweenUsers(@Param('user1Id') user1Id: string, @Param('user2Id') user2Id: string) {
-    return this.chatService.getMessagesBetweenUsers(user1Id, user2Id);
-  }
-
-  @Post('group')
-  async createGroup(@Body(ValidationPipe) createGroupDto: CreateGroupDto) {
-    return this.chatService.createGroup(createGroupDto);
-  }
-
-  @Get('group/:groupId/messages')
-  async getGroupMessages(@Param('groupId') groupId: string) {
-    return this.chatService.getGroupMessages(groupId);
+  @Get('private/:senderId/:receiverId')
+  async getPrivateMessages(
+    @Param('senderId') senderId: string,
+    @Param('receiverId') receiverId: string,
+  ) {
+    return this.messagesService.getPrivateMessages(senderId, receiverId);
   }
 }

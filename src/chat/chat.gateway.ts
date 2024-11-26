@@ -1,67 +1,103 @@
-// src/chat/chat.gateway.ts
-import { WebSocketGateway, WebSocketServer, SubscribeMessage, MessageBody, ConnectedSocket } from '@nestjs/websockets';
-import { Server, Socket } from 'socket.io';
-import { ChatService } from './chat.service';
-import { CreateMessageDto } from '../dtos/create-message.dto';
-
-@WebSocketGateway()
-export class ChatGateway {
-  @WebSocketServer()
-  server: Server;
-
-  constructor(private chatService: ChatService) {}
-
-  @SubscribeMessage('sendMessage')
-  async handleMessage(
-    @MessageBody() createMessageDto: CreateMessageDto,
-    @ConnectedSocket() client: Socket
-  ) {
-    const senderId = client.handshake.query.userId as string;
-    const message = await this.chatService.createMessage(senderId, createMessageDto);
-    
-    // Mise à jour du statut du message
-    await this.chatService.updateMessageStatus(message._id.toString(), 'sent');
-    
-    // Envoi du message à l'utilisateur destinataire
-    this.server.to(createMessageDto.recipientId).emit('newMessage', message);
-    client.emit('messageSent', message);
+// chat.gateway.ts
+import {
+    WebSocketGateway,
+    WebSocketServer,
+    SubscribeMessage,
+    OnGatewayConnection,
+    OnGatewayDisconnect,
+    ConnectedSocket,
+    MessageBody,
+  } from '@nestjs/websockets';
+  import { Server, Socket } from 'socket.io';
+  import { ChatService } from './chat.service';
+  
+  @WebSocketGateway({
+    cors: {
+      origin: '*',
+    },
+  })
+  export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
+    @WebSocketServer()
+    server: Server;
+  
+    constructor(private chatService: ChatService) {}
+  
+    async handleConnection(client: Socket) {
+      const userId = client.handshake.query.userId as string;
+      if (userId) {
+        this.chatService.userConnected(userId, client.id);
+        const connectedUsers = await this.chatService.getConnectedUsers();
+        this.server.emit('users:connected', connectedUsers);
+      }
+    }
+  
+    async handleDisconnect(client: Socket) {
+      const userId = client.handshake.query.userId as string;
+      if (userId) {
+        this.chatService.userDisconnected(userId);
+        const connectedUsers = await this.chatService.getConnectedUsers();
+        this.server.emit('users:connected', connectedUsers);
+      }
+    }
+  
+    @SubscribeMessage('message:private')
+    async handlePrivateMessage(
+      @ConnectedSocket() client: Socket,
+      @MessageBody() data: { senderId: string; receiverId: string; content: string },
+    ) {
+      const message = await this.chatService.saveMessage(
+        data.senderId,
+        data.content,
+        'private',
+        data.receiverId,
+      );
+  
+      const receiverSocketId = this.chatService.getSocketId(data.receiverId);
+      if (receiverSocketId) {
+        this.server.to(receiverSocketId).emit('message:private', message);
+      }
+      
+      client.emit('message:private', message);
+    }
+  
+    @SubscribeMessage('message:group')
+    async handleGroupMessage(
+      @MessageBody()
+      data: { senderId: string; groupId: string; content: string },
+    ) {
+      const message = await this.chatService.saveMessage(
+        data.senderId,
+        data.content,
+        'group',
+        undefined,
+        data.groupId,
+      );
+  
+      this.server.emit('message:group', {
+        groupId: data.groupId,
+        message,
+      });
+    }
+  
+    @SubscribeMessage('message:general')
+    async handleGeneralMessage(
+      @MessageBody()
+      data: { senderId: string; content: string },
+    ) {
+      const message = await this.chatService.saveMessage(
+        data.senderId,
+        data.content,
+        'general',
+      );
+  
+      this.server.emit('message:general', message);
+    }
+  
+    @SubscribeMessage('message:read')
+    async handleMessageRead(
+      @MessageBody() data: { messageId: string },
+    ) {
+      const message = await this.chatService.markMessageAsRead(data.messageId);
+      this.server.emit('message:updated', message);
+    }
   }
-
-  @SubscribeMessage('readMessage')
-  async handleReadMessage(
-    @MessageBody() messageId: string,
-    @ConnectedSocket() client: Socket
-  ) {
-    await this.chatService.updateMessageStatus(messageId, 'read');
-    this.server.emit('messageRead', messageId);
-  }
-
-  @SubscribeMessage('joinGroup')
-  handleJoinGroup(@MessageBody() groupId: string, @ConnectedSocket() client: Socket) {
-    client.join(groupId);
-    client.emit('joinedGroup', groupId);
-  }
-
-  @SubscribeMessage('leaveGroup')
-  handleLeaveGroup(@MessageBody() groupId: string, @ConnectedSocket() client: Socket) {
-    client.leave(groupId);
-    client.emit('leftGroup', groupId);
-  }
-
-  @SubscribeMessage('setStatus')
-  async handleStatus(
-    @MessageBody() status: string,
-    @ConnectedSocket() client: Socket
-  ) {
-    const userId = client.handshake.query.userId as string;
-    await this.chatService.setStatus(userId, status);
-    this.server.emit('userStatusUpdated', { userId, status });
-  }
-
-  @SubscribeMessage('setOnline')
-  async handleSetOnline(@MessageBody() status: boolean, @ConnectedSocket() client: Socket) {
-    const userId = client.handshake.query.userId as string;
-    await this.chatService.setUserOnline(userId, status);
-    this.server.emit('userOnlineStatusUpdated', { userId, isOnline: status });
-  }
-}

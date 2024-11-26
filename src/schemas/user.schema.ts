@@ -1,16 +1,15 @@
 // src/schemas/user.schema.ts
-import * as mongoose from 'mongoose';
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
 
 export type UserDocument = User & Document;
 
-@Schema()
+@Schema({ timestamps: true })
 export class User {
   @Prop({ required: true })
   username: string;
 
-  @Prop({ required: true })
+  @Prop({ required: true, unique: true })
   firstName: string;
 
   @Prop({ required: true })
@@ -19,14 +18,11 @@ export class User {
   @Prop({ required: true })
   email: string;
 
-  @Prop({ default: 'offline' }) // Statut de l'utilisateur (en ligne, hors ligne, masqué)
-  status: string;
-
-  @Prop({ default: Date.now })
-  lastSeen: Date; // Dernière connexion
-
   @Prop({ default: false })
-  isOnline: boolean; // Si l'utilisateur est en ligne
+  isOnline: boolean;
+
+  @Prop()
+  lastSeen: Date;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);
