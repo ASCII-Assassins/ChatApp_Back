@@ -35,8 +35,21 @@ async function bootstrap() {
 
   // Utiliser l'adaptateur personnalisé
   app.useWebSocketAdapter(new CustomIoAdapter(app));
+  
+    app.connectMicroservice<MicroserviceOptions>({
+    transport: Transport.RMQ,
+    options: {
+      urls: [process.env.RABBITMQ_URI],
+      queue: 'USER_REGISTRATION',
+      queueOptions: {
+        durable: false
+      }
+    }
+  });
+
+  await app.startAllMicroservices();
 
   await app.listen(3000);
   console.log('Application is running on:', await app.getUrl());
-}
+
 bootstrap();

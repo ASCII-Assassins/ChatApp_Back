@@ -22,5 +22,6 @@ export class UsersService {
       isOnline,
       lastSeen: isOnline ? undefined : new Date(),
     });
+
   }
 }
