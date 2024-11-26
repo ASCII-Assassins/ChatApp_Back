@@ -1,31 +1,30 @@
-import { Controller, Get, Post, Body, Param, Query } from '@nestjs/common';
+// src/chat/chat.controller.ts
+import { Controller, Post, Body, Param, Get, ValidationPipe } from '@nestjs/common';
 import { ChatService } from './chat.service';
-import { Message } from './schemas/message.schema';
+import { CreateMessageDto } from '../dtos/create-message.dto';
+import { CreateGroupDto } from '../dtos/create-group.dto';
 
 @Controller('chat')
 export class ChatController {
   constructor(private readonly chatService: ChatService) {}
 
-  @Post()
-  async create(@Body() message: Message) {
-    return this.chatService.create(message);
-  }
-                            
-  @Get()
-  async findAll(@Query() query: any) {
-    return this.chatService.findAll(query);
+  @Post('message')
+  async sendMessage(@Body(ValidationPipe) createMessageDto: CreateMessageDto) {
+    return this.chatService.createMessage(createMessageDto.senderId, createMessageDto);
   }
 
-  @Get(':id')
-  async findOne(@Param('id') id: string) {
-    return this.chatService.findOne(id);
+  @Get(':user1Id/:user2Id')
+  async getMessagesBetweenUsers(@Param('user1Id') user1Id: string, @Param('user2Id') user2Id: string) {
+    return this.chatService.getMessagesBetweenUsers(user1Id, user2Id);
   }
 
-  @Get('search')
-  async search(@Query('term') term: string) {
-    const query = { content: { $regex: term, $options: 'i' } };
-    return this.chatService.findAll(query);
+  @Post('group')
+  async createGroup(@Body(ValidationPipe) createGroupDto: CreateGroupDto) {
+    return this.chatService.createGroup(createGroupDto);
   }
 
+  @Get('group/:groupId/messages')
+  async getGroupMessages(@Param('groupId') groupId: string) {
+    return this.chatService.getGroupMessages(groupId);
+  }
 }
-
