@@ -18,10 +18,10 @@ export class ChannelService {
         @InjectModel(User.name) private userModel: Model<UserDocument>
     ) { }
 
+
     async createChannelService(createChannelDto: CreateChannelDto): Promise<Channel>{
-        if(createChannelDto.owner){
             try {
-                const user = await this.userModel.findById(createChannelDto.owner).exec();
+                // const user = await this.userModel.findById(createChannelDto.owner).exec();
                 const createCannel = new this.channelModel(createChannelDto);
                 return createCannel.save();
             }catch (e) {
@@ -32,24 +32,23 @@ export class ChannelService {
                     cause: e
                 });
             }
-            }
         }
+    }
 
 
-        async getallChannel(): Promise<Channel[]>{
-            try {
-                const allchannel = await this.channelModel.find();
-                if(!allchannel){
-                    throw new NotFoundException('No channel available');
-                }
-                return allchannel;
-            }catch (e){
-                throw new HttpException({
-                    status: HttpStatus.NOT_FOUND,
-                    error: 'No groups available',
-                }, HttpStatus.FORBIDDEN, {
-                    cause: e
-                });
+    async getallChannel(): Promise<Channel[]>{
+        try {
+            const allchannel = await this.channelModel.find();
+            if(!allchannel){
+                throw new NotFoundException('No channel available');
             }
+            return allchannel;
+        }catch (e){
+            throw new HttpException({
+                status: HttpStatus.NOT_FOUND,
+                error: 'No groups available',
+            }, HttpStatus.FORBIDDEN, {
+                cause: e
+            });
         }
     }

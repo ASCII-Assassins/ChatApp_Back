@@ -10,14 +10,6 @@ export class CreateChannelDto{
     @IsOptional()
     description?: string;
 
-    @IsString()
-    @IsArray()
-    @IsMongoId({ each: true})
-    members: Types.ObjectId[] = [];
-
-    @IsMongoId()
-    owner: string;
-
 
 //   @IsString()
 //   @IsOptional()
